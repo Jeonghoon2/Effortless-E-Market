@@ -1,0 +1,61 @@
+# Server gitignore
+./E-Market-Server/HELP.md
+./E-Market-Server/.gradle
+./E-Market-Server/build/
+!gradle/wrapper/gradle-wrapper.jar
+!**/src/main/**/build/
+!**/src/test/**/build/
+
+### STS ###
+./E-Market-Server/.apt_generated
+./E-Market-Server/.classpath
+./E-Market-Server/.factorypath
+./E-Market-Server/.project
+./E-Market-Server/.settings
+./E-Market-Server/.springBeans
+./E-Market-Server/.sts4-cache
+./E-Market-Server/bin/
+!**/src/main/**/bin/
+!**/src/test/**/bin/
+
+### IntelliJ IDEA ###
+./E-Market-Server.idea
+./E-Market-Server/*.iws
+./E-Market-Server/*.iml
+./E-Market-Server/*.ipr
+./E-Market-Server/out/
+!**/src/main/**/out/
+!**/src/test/**/out/
+
+### NetBeans ###
+./E-Market-Server/nbproject/private/
+./E-Market-Server/nbbuild/
+./E-Market-Server/dist/
+./E-Market-Server/nbdist/
+./E-Market-Server/.nb-gradle/
+
+
+# Web gitignore
+
+# dependencies
+./E-Market-Web/node_modules
+./E-Market-Web/.pnp
+./E-Market-Web/pnp.js
+
+# testing
+./E-Market-Web/coverage
+
+# production
+./E-Market-Web/build
+
+# misc
+./E-Market-Web/DS_Store
+./E-Market-Web/env.local
+./E-Market-Web/env.development.local
+./E-Market-Web/env.test.local
+./E-Market-Web/env.production.local
+
+./E-Market-Web/npm-debug.log*
+./E-Market-Web/yarn-debug.log*
+./E-Market-Web/yarn-error.log*
+
