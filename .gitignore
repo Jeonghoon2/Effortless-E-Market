@@ -59,3 +59,5 @@
 ./E-Market-Web/yarn-debug.log*
 ./E-Market-Web/yarn-error.log*
 
+# ETC
+.DS_Store
