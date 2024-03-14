@@ -3,5 +3,13 @@ package com.effortless.effortlessmarket.domain.member.repository;
 import com.effortless.effortlessmarket.domain.member.entity.Member;
 import org.springframework.data.jpa.repository.JpaRepository;
 
-public interface MemberRepository extends JpaRepository<Member,Long>, MemberRepositoryCustom {
+import java.util.Optional;
+
+public interface MemberRepository extends JpaRepository<Member,Long>, MemberCustomRepository {
+
+    Optional<Member> findByEmail(String email);
+
+
+
+
 }

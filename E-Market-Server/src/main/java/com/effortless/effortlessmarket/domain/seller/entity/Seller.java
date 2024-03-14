@@ -1,46 +1,54 @@
 package com.effortless.effortlessmarket.domain.seller.entity;
 
+
 import com.effortless.effortlessmarket.domain.product.entity.Product;
+import com.effortless.effortlessmarket.domain.seller.dto.SellerRequest;
+import com.effortless.effortlessmarket.global.entity.BaseTimeEntity;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.Setter;
 
 import java.util.ArrayList;
 import java.util.List;
 
-
 @Entity
-@NoArgsConstructor(access = AccessLevel.PROTECTED)
-public class Seller {
+@Getter
+@Table(name = "seller")
+public class Seller extends BaseTimeEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "s_id")
-    @Getter
+    @Column(name = "seller_id")
     private Long id;
 
-    @Column(name = "s_email")
+    @Column(name = "seller_email", length = 50)
     private String email;
-    @Column(name = "s_password")
+
+    @Column(name = "seller_password", length = 200)
     private String password;
-    @Column(name = "s_name")
+
+    @Column(name = "seller_name", length = 20)
     private String name;
 
-    @Column(name = "s_phone_number")
+    @Column(name = "seller_phone_number", length = 15)
     private String phoneNumber;
 
-    @Column(name = "s_address")
-    private String address;
+    @Column(name = "seller_brand_name", length = 50)
+    private String brandName;
 
     @OneToMany(mappedBy = "seller")
-    private List<Product> products = new ArrayList<>();
+    private List<Product> productList = new ArrayList<>();
 
-    public Seller(String email, String password, String name, String phoneNumber, String address) {
-        this.email = email;
-        this.password = password;
-        this.name = name;
-        this.phoneNumber = phoneNumber;
-        this.address = address;
+    public Seller() {
+    }
+
+    public void saveSeller(SellerRequest sellerRequest) {
+        this.email = sellerRequest.getEmail();
+        this.password = sellerRequest.getPassword();
+        this.name = sellerRequest.getName();
+        this.phoneNumber = sellerRequest.getPhoneNumber();
+        this.brandName = sellerRequest.getBrandName();
     }
 }

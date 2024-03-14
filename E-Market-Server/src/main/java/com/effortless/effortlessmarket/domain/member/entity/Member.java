@@ -1,57 +1,68 @@
 package com.effortless.effortlessmarket.domain.member.entity;
 
+import com.effortless.effortlessmarket.domain.member.dto.MemberRequest;
 import com.effortless.effortlessmarket.domain.memberAddress.entity.MemberAddress;
+import com.effortless.effortlessmarket.domain.order.entity.Order;
+import com.effortless.effortlessmarket.global.entity.BaseTimeEntity;
+import com.fasterxml.jackson.annotation.JsonManagedReference;
 import jakarta.persistence.*;
-import lombok.AccessLevel;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.ToString;
-import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import lombok.*;
 
 import java.util.ArrayList;
 import java.util.List;
 
 @Entity
-@NoArgsConstructor(access = AccessLevel.PROTECTED)
 @Getter
-@ToString(of = {"id","name","gender","phoneNumber"})
-public class Member {
+@ToString(of = {"email","name","gender","phoneNumber"})
+public class Member extends BaseTimeEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "m_id")
+    @Column(name = "member_id")
     private Long id;
 
-    @Column(name = "m_email")
+    @Column(name = "member_email", length = 50)
     private String email;
 
-    @Column(name = "m_password")
+    @Column(name = "member_password", length = 200)
     private String password;
 
-    @Column(name = "m_name")
+    @Column(name = "member_name", length = 20)
     private String name;
 
-    @Column(name = "m_gender")
-    private String gender;
+    @Column(name = "member_gender")
+    @Enumerated(value = EnumType.STRING)
+    private GenderType gender;
 
-    @Column(name = "m_phone_number")
+    @Column(name = "member_phone_number", length = 15)
     private String phoneNumber;
 
-    @Column(name = "m_address")
-    private String address;
-
     @OneToMany(mappedBy = "member")
+    @JsonManagedReference
     private List<MemberAddress> memberAddresses = new ArrayList<>();
 
-    /* 회원 생성 */
-    public Member(String email, String password, String name, String gender, String phoneNumber, String address) {
-        this.email = email;
-        this.password = new BCryptPasswordEncoder(10).encode(password);
-        this.name = name;
-        this.gender = gender;
-        this.phoneNumber = phoneNumber;
-        this.address = address;
+    @OneToMany(mappedBy = "member")
+    private List<Order> orders = new ArrayList<>();
+
+    public Member() {
     }
 
+    public void save(MemberRequest memberRequest) {
 
+        if (memberRequest.getEmail() != null) {
+            this.email = memberRequest.getEmail();
+        }
+        if (memberRequest.getPassword() != null) {
+            this.password = memberRequest.getPassword();
+        }
+        if (memberRequest.getName() != null) {
+            this.name = memberRequest.getName();
+        }
+        if (memberRequest.getGender() != null) {
+            this.gender = memberRequest.getGender();
+        }
+        if (memberRequest.getPhoneNumber() != null) {
+            this.phoneNumber = memberRequest.getPhoneNumber();
+        }
+    }
 }
