@@ -1,49 +1,56 @@
 package com.effortless.effortlessmarket.domain.memberAddress.entity;
 
 import com.effortless.effortlessmarket.domain.member.entity.Member;
+import com.effortless.effortlessmarket.domain.memberAddress.dto.MemberAddressRequest;
+import com.effortless.effortlessmarket.global.entity.BaseTimeEntity;
+import com.fasterxml.jackson.annotation.JsonBackReference;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-import lombok.ToString;
-
-// 회원 별 배송지
 
 @Entity
-@NoArgsConstructor(access = AccessLevel.PROTECTED)
 @Getter
-@ToString(of = {"recipientName","recipientPhoneNumber","recipientAddress","isDefault"})
-public class MemberAddress {
+@Table(name = "member_address")
+public class MemberAddress extends BaseTimeEntity {
 
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "ma_id")
+
+    @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "member_address_id")
     private Long id;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "m_id")
+    @JsonBackReference
+    @JoinColumn(name = "member_id")
     private Member member;
 
-    @Column(name = "ma_name")
+    @Column(length = 20, nullable = false)
     private String recipientName;
 
-    @Column(name = "ma_phone_number")
+    @Column(length = 15, nullable = false)
     private String recipientPhoneNumber;
 
-    @Column(name = "ma_address")
+    @Column(length = 100, nullable = false)
     private String recipientAddress;
 
-    @Column(name = "ma_def")
-    private Integer isDefault;
+    private boolean isDefault = false;
 
-    public MemberAddress(String recipientName, String recipientPhoneNumber, String recipientAddress, Integer isDefault) {
-        this.recipientName = recipientName;
-        this.recipientPhoneNumber = recipientPhoneNumber;
-        this.recipientAddress = recipientAddress;
-        this.isDefault = isDefault;
+
+    public void saveAddress(Member member,MemberAddressRequest request) {
+        this.member = member;
+        if (request.getRecipientName() != null){
+            this.recipientName = request.getRecipientName();
+        }
+        if (request.getRecipientPhoneNumber() != null){
+            this.recipientPhoneNumber = request.getRecipientPhoneNumber();
+        }
+        if (request.getRecipientAddress() != null){
+            this.recipientAddress = request.getRecipientAddress();
+        }
     }
 
-
-
+    public void updateDefaultAddress(){
+        this.isDefault = true;
+    }
 
 }

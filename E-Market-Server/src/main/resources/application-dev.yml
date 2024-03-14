@@ -1,0 +1,22 @@
+server:
+  port: 7070
+
+spring:
+  datasource:
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    url: jdbc:mysql://59.25.160.202:12424/effort?
+    username: root
+    password: roo1
+
+  jpa:
+    properties:
+      hibernate:
+      show_sql: false
+      format_sql: false
+    hibernate:
+      ddl-auto: create
+    database-platform: org.hibernate.dialect.MySQLDialect
+    generate-ddl: true
+
+logging:
+  config: classpath:logging/logback-dev-config.xml

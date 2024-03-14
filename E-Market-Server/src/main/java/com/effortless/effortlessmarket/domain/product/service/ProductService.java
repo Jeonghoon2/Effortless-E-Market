@@ -1,69 +1,76 @@
 package com.effortless.effortlessmarket.domain.product.service;
 
-
-
-import com.effortless.effortlessmarket.domain.product.dto.request.GetProductRequest;
-import com.effortless.effortlessmarket.domain.product.dto.request.SaveProductRequest;
+import com.effortless.effortlessmarket.domain.category.entity.Category;
+import com.effortless.effortlessmarket.domain.category.repository.CategoryRepository;
+import com.effortless.effortlessmarket.domain.product.dto.ProductRequest;
+import com.effortless.effortlessmarket.domain.product.dto.ProductResponse;
 import com.effortless.effortlessmarket.domain.product.entity.Product;
 import com.effortless.effortlessmarket.domain.product.repository.ProductRepository;
 import com.effortless.effortlessmarket.domain.seller.entity.Seller;
-import com.effortless.effortlessmarket.domain.seller.serivce.SellerService;
-import jakarta.servlet.http.HttpServletRequest;
+import com.effortless.effortlessmarket.domain.seller.repository.SellerRepository;
+import com.effortless.effortlessmarket.global.exception.CustomException;
+import com.effortless.effortlessmarket.global.exception.CustomExceptionType;
 import lombok.RequiredArgsConstructor;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
-
+import org.springframework.transaction.annotation.Transactional;
 
 @Service
 @RequiredArgsConstructor
 public class ProductService {
 
     private final ProductRepository productRepository;
-    private final SellerService sellerService;
+    private final CategoryRepository categoryRepository;
+    private final SellerRepository sellerRepository;
 
-    private static Logger log = LoggerFactory.getLogger("dc-logger");
+    /* 상품 등록 */
+    @Transactional
+    public ProductResponse createProduct(ProductRequest request){
+        /* 판매자 조회 */
+        Seller seller = sellerRepository.findById(request.getSellerId())
+                .orElseThrow(() -> new CustomExceptionType(CustomException.SELLER_NOT_FOUND));
 
-    /* 상품 추가 */
-    public ResponseEntity createProduct(SaveProductRequest request, String url){
-        HttpServletRequest request1 = null;
-        Seller seller = sellerService.findByIdToSeller(request.getSellerId());
-        Product product = productBuilder(seller, request);
-        productRepository.save(product);
+        /* 카테고리 조회 */
+        Category category = categoryRepository.findById(request.getCategoryId())
+                .orElseThrow(() -> new CustomExceptionType(CustomException.CATEGORY_NOT_FOUND));
+
+        /* 상품 등록 */
+        Product newProduct = new Product(request, category, seller);
+        Product createdProduct = productRepository.save(newProduct);
+        return new ProductResponse(createdProduct);
+
+    }
+
+    /* 상품 수정 */
+    @Transactional
+    public ProductResponse updateProduct(ProductRequest request){
+
+        Product product = productRepository.findById(request.getId())
+                .orElseThrow(() -> new CustomExceptionType(CustomException.PRODUCT_NOT_FOUND));
+        product.update(request);
 
 
-
-        return ResponseEntity.status(HttpStatus.CREATED).build();
+        return new ProductResponse(product);
     }
 
     /* 상품 조회 */
-    public ResponseEntity getProduct(GetProductRequest request){
-        Product product;
-
-        try {
-             product =  productRepository.findById(request.getProductId()).get();
-
-            if (product != null){
-                return ResponseEntity.status(HttpStatus.OK).body(product);
-            }
-        } catch (Exception e) {
-            log.error("HTTP Error : {}", e.getMessage());
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
-        }
-        return null;
+    @Transactional
+    public ProductResponse getProduct(Long id){
+        Product product = productRepository.findById(id)
+                .orElseThrow(()->new CustomExceptionType(CustomException.PRODUCT_NOT_FOUND));
+        product.incrementViews();
+        return new ProductResponse(product);
     }
 
-    private Product productBuilder(Seller seller, SaveProductRequest request) {
-        return  new Product(
-                seller,
-                request.getName(),
-                request.getPrice(),
-                request.getDescription(),
-                request.getQuantity(),
-                request.getIsOpen()
-        );
+    /* 상품 좋아요 */
+
+
+    /* 상품 삭제 */
+    @Transactional
+    public void deleteProduct(Long id){
+        Product product = productRepository.findById(id)
+                .orElseThrow(() -> new CustomExceptionType(CustomException.PRODUCT_NOT_FOUND));
+
+        productRepository.delete(product);
     }
 
 }

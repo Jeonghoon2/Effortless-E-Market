@@ -1,9 +1,13 @@
 package com.effortless.effortlessmarket.domain.member.repository;
 
+import com.effortless.effortlessmarket.domain.member.dto.MemberRequest;
+import com.effortless.effortlessmarket.domain.member.entity.Member;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import jakarta.persistence.EntityManager;
 
-public class MemberRepositoryImpl implements MemberRepositoryCustom{
+import java.util.Optional;
+
+public class MemberRepositoryImpl implements MemberCustomRepository {
 
     private final JPAQueryFactory queryFactory;
 
@@ -12,6 +16,8 @@ public class MemberRepositoryImpl implements MemberRepositoryCustom{
     }
 
 
-
-
+    @Override
+    public Optional<Member> saveMember(MemberRequest request) {
+        return Optional.empty();
+    }
 }

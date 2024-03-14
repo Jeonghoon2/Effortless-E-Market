@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration>
+
+    <!-- Console Appender-->
+    <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
+        <layout class="ch.qos.logback.classic.PatternLayout">
+            <Pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n</Pattern>
+        </layout>
+    </appender>
+
+
+<!--    <appender name="kafkaAppender" class="com.github.danielwegener.logback.kafka.KafkaAppender">-->
+<!--        <encoder class="com.github.danielwegener.logback.kafka.encoding.LayoutKafkaMessageEncoder">-->
+<!--            <layout class="ch.qos.logback.classic.PatternLayout">-->
+<!--                <Pattern>%msg%n</Pattern>-->
+<!--            </layout>-->
+<!--        </encoder>-->
+<!--        <topic>log-test-kafka</topic>-->
+<!--        <producerConfig>bootstrap.servers=${kafka.bootstrap.servers}</producerConfig>-->
+<!--    </appender>-->
+
+    <!-- logger -->
+    <logger name="KafkaLogger">
+        <appender-ref ref="kafkaAppender"/>
+    </logger>
+
+    <root level="info">
+        <appender-ref ref="STDOUT"/>
+    </root>
+
+    <logger name="custom-layout">
+        <appender-ref ref="custom-layout" />
+    </logger>
+
+</configuration>
