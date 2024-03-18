@@ -27,7 +27,7 @@ public class QCategory extends EntityPathBase<Category> {
     public final ListPath<Category, QCategory> children = this.<Category, QCategory>createList("children", Category.class, QCategory.class, PathInits.DIRECT2);
 
     //inherited
-    public final DateTimePath<java.time.LocalDateTime> createAt = _super.createAt;
+    public final DateTimePath<java.time.LocalDateTime> createdAt = _super.createdAt;
 
     public final NumberPath<Integer> depth = createNumber("depth", Integer.class);
 

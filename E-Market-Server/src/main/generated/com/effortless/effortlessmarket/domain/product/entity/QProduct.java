@@ -27,7 +27,7 @@ public class QProduct extends EntityPathBase<Product> {
     public final com.effortless.effortlessmarket.domain.category.entity.QCategory category;
 
     //inherited
-    public final DateTimePath<java.time.LocalDateTime> createAt = _super.createAt;
+    public final DateTimePath<java.time.LocalDateTime> createdAt = _super.createdAt;
 
     public final StringPath description = createString("description");
 
