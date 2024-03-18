@@ -1,6 +1,8 @@
 package com.effortless.effortlessmarket.global.interceptor;
 
 import com.effortless.effortlessmarket.global.dto.LogDto;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.slf4j.Logger;
@@ -29,7 +31,7 @@ public class LoggingHandlerInterceptor implements HandlerInterceptor {
     }
 
     @Override
-    public void afterCompletion(HttpServletRequest request, HttpServletResponse response, Object handler, Exception ex) {
+    public void afterCompletion(HttpServletRequest request, HttpServletResponse response, Object handler, Exception ex) throws JsonProcessingException {
 
         if (request.getAttribute(KEY_REQUEST_LOGGER_DO_WRITE_LOG) == null) {
             return;
@@ -51,7 +53,9 @@ public class LoggingHandlerInterceptor implements HandlerInterceptor {
 
         if (cachingRequest != null && cachingResponse != null) {
             LogDto message = LogDto.toEntity(request, response, cachingRequest, cachingResponse);
-            logger.info("{}", message);
+            ObjectMapper objectMapper = new ObjectMapper();
+            String jsonLog = objectMapper.writeValueAsString(message);
+            logger.info("{}", jsonLog);
         }
     }
 }
