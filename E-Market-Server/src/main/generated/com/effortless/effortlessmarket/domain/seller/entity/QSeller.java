@@ -25,7 +25,7 @@ public class QSeller extends EntityPathBase<Seller> {
     public final StringPath brandName = createString("brandName");
 
     //inherited
-    public final DateTimePath<java.time.LocalDateTime> createAt = _super.createAt;
+    public final DateTimePath<java.time.LocalDateTime> createdAt = _super.createdAt;
 
     public final StringPath email = createString("email");
 

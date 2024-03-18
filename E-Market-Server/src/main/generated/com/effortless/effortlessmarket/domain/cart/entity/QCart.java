@@ -27,7 +27,7 @@ public class QCart extends EntityPathBase<Cart> {
     public final NumberPath<Integer> count = createNumber("count", Integer.class);
 
     //inherited
-    public final DateTimePath<java.time.LocalDateTime> createAt = _super.createAt;
+    public final DateTimePath<java.time.LocalDateTime> createdAt = _super.createdAt;
 
     public final NumberPath<Long> id = createNumber("id", Long.class);
 
