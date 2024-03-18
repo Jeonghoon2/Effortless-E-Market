@@ -64,6 +64,11 @@
 /E-Market-Server/src/main/generated/
 /E-Market-Server/src/main/resources/logging/logback-prod-config.xml
 
+
+# ETL
+/Effort-Etl/Test
+**/__pycache__*
+
 # ETC
 .DS_Store
 ._.DS_Store
