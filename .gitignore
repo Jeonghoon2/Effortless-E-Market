@@ -1,0 +1,71 @@
+# Server gitignore
+**/HELP.md
+**/.gradle
+**/build/
+!gradle/wrapper/gradle-wrapper.jar
+!**/src/main/**/build/
+!**/src/test/**/build/
+
+### STS ###
+**/.apt_generated
+**/.classpath
+**/.factorypath
+**/.project
+**/.settings
+**/.springBeans
+**/.sts4-cache
+**/bin/
+!**/src/main/**/bin/
+!**/src/test/**/bin/
+
+### IntelliJ IDEA ###
+**/.idea
+**/*.iws
+**/*.iml
+*/*.ipr
+**/out/
+!**/src/main/**/out/
+!**/src/test/**/out/
+
+### NetBeans ###
+**/nbproject/private/
+**/nbbuild/
+**/dist/
+**/nbdist/
+**/.nb-gradle/
+
+
+# Web gitignore
+
+# dependencies
+**/node_modules
+**/.pnp
+**/pnp.js
+
+# testing
+**/coverage
+
+# production
+**/build
+
+# misc
+**/env.local
+**/env.development.local
+**/env.test.local
+**/env.production.local
+
+**/npm-debug.log*
+**/yarn-debug.log*
+**/yarn-error.log*
+
+# server
+/E-Market-Server/src/main/resources/application-dev.yml
+/E-Market-Server/src/main/resources/application-prod.yml
+/E-Market-Server/src/main/generated/
+/E-Market-Server/src/main/resources/logging/logback-prod-config.xml
+
+# ETC
+.DS_Store
+._.DS_Store
+**/.DS_Store
+**/._.DS_Store
