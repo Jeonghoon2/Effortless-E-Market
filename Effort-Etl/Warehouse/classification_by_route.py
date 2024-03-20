@@ -3,6 +3,8 @@ import sys
 import pyspark.sql.functions as F
 from pyspark.sql import DataFrame, Window
 from pyspark.sql.utils import AnalysisException
+from pyspark.sql.types import StringType
+import re
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s %(levelname)s %(message)s')
 logger = logging.getLogger(__name__)
@@ -14,10 +16,17 @@ except ImportError:
     from Common.etl_base import etl_base
 
 
+def path_transform(path):
+    path = path.replace('/', '_')
+    path = re.sub(r'_\d+', '_(id)', path)
+    return path
+
+
 class classification_by_route(etl_base):
 
     def __init__(self):
         super().__init__()
+        self.path_udf = F.udf(path_transform, StringType())
         self.run_env = None
         self.table = None  # Read Table
         self.write_table = None
@@ -37,12 +46,15 @@ class classification_by_route(etl_base):
 
     def process(self, df: DataFrame) -> DataFrame:
         try:
-            return (
+            df = (
                 df
                 .drop("clientIp", "elapsedTimeMillis", "etl_hh", "etl_cre_dtm")
                 .withColumn("etl_cre_dtm", F.current_timestamp())
                 .withColumn("path", F.regexp_replace("path", "/", "_"))
+
             )
+            return df.withColumn("path", self.path_udf(F.col("path")))
+
         except Exception as e:
             raise RuntimeError(f"Failed to process DataFrame. Error: {str(e)}")
 
