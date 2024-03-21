@@ -60,18 +60,20 @@ class json_to_parquet(etl_base):
                 )
 
     def write(self, df: DataFrame) -> None:
+        try:
+            df_to_write = self._deduplicate(df) if self.table_exists(self.write_table) else df
 
-        df_to_write = self._deduplicate(df) if self.table_exists(self.write_table) else df
+            df.show()
 
-        df.show()
+            df_to_write.write \
+                .partitionBy(self.partitionList) \
+                .mode('overwrite') \
+                .format("parquet") \
+                .saveAsTable(self.write_table)
 
-        df_to_write.write \
-            .partitionBy(self.partitionList) \
-            .mode('overwrite') \
-            .format("parquet") \
-            .saveAsTable(self.write_table)
-
-        logger.info("성공적으로 적으로 DataFrame을 저장하였습니다.")
+            logger.info("성공적으로 적으로 DataFrame을 저장하였습니다.")
+        except Exception as e:
+            raise RuntimeError(f"데이터 저장에 실패하였습니다. Error: {e}")
 
     def _deduplicate(self, df: DataFrame) -> DataFrame:
         try:
