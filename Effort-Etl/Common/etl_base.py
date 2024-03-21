@@ -30,7 +30,7 @@ class etl_base(metaclass=ABCMeta):
         ...
 
     @abstractmethod
-    def read(self, path_or_table: str) -> Dict[str, Any] | DataFrame:
+    def read(self) -> Dict[str, Any] | DataFrame:
         ...
 
     @abstractmethod

@@ -18,31 +18,18 @@ except ImportError:
 
 
 class json_to_parquet(etl_base):
+    WRITE_TABLE_PROD = "bdp_wh.log_ingest"
+    WRITE_TABLE_LOCAL = "log_ingest"
+    READ_PATH_PROD = "/data/ingestion/"
+    READ_PATH_LOCAL = "../data/JsonToParquet-A.json"
 
     def __init__(self):
         super().__init__()
-        self.table_name = None
-        self.order_col = None
-        self.standard_col = None
+        self.read_path = self.READ_PATH_PROD if self.run_env == "prod" else self.READ_PATH_LOCAL
+        self.write_table = self.WRITE_TABLE_PROD if self.run_env == "prod" else self.WRITE_TABLE_LOCAL
+        self.partitionList = ["cre_dtm"]
 
-        self.common_init()
-
-        if self.run_env == "prod":
-            self.prod_init()
-        else:
-            self.test_init()
-
-    def common_init(self):
-        self.standard_col: str = "cre_dtm"
-        self.order_col: str = "etl_dtm"
-
-    def prod_init(self):
-        self.table_name: str = "bdp_wh.log_ingest"
-
-    def test_init(self):
-        self.table_name: str = "log_ingest"
-
-    def read(self, path: str) -> DataFrame:
+    def read(self) -> DataFrame:
         schema = T.StructType([
             T.StructField("traceId", T.StringType(), True),
             T.StructField("clientIp", T.StringType(), True),
@@ -55,44 +42,54 @@ class json_to_parquet(etl_base):
             T.StructField("elapsedTimeMillis", T.IntegerType(), True)
         ])
 
-        if self.run_env == "prod":
-            json_path = os.path.join(path, self.base_dt.strftime("%Y-%m-%d"), '*/*.json')
-        else:
-            json_path = path
+        json_path = self.get_json_path()
 
-        logger.info(f"Reading JSON files from: {path}")
-        return self.spark.read.json(json_path, schema=schema)
+        df = self.spark.read.schema(schema).json(json_path)
+
+        if df.rdd.isEmpty():
+            logger.error("DataFrame이 비어 있습니다.")
+            sys.exit(405)
+        else:
+            logger.info("성공적으로 Json 파일을 읽어 들였습니다.")
+            return df
 
     def process(self, df: DataFrame) -> DataFrame:
-        return (df
-                .withColumn("etl_dtm", F.current_timestamp())
-                .withColumn("cre_dtm", F.lit(self.base_dt.strftime("%Y-%m-%d")))
-                )
+        try:
+            df = (df
+                  .withColumn("etl_dtm", F.current_timestamp())
+                  .withColumn("cre_dtm", F.lit(self.base_dt.strftime("%Y-%m-%d")))
+                  )
+
+            return df
+        except Exception as e:
+            logger.error(f"DataFrame 처리 하는 도중 오류가 발생했습니다. Error: {str(e)}")
+            sys.exit(406)
 
     def write(self, df: DataFrame) -> None:
-        standard_col = self.base_dt.strftime("%Y-%m-%d")
+        try:
+            df_to_write = self._deduplicate(df) if self.table_exists(self.write_table) else df
 
-        logger.info(df.schema)
+            df.show()
 
-        # 디렉토리 존재 여부를 확인하고, 존재하는 경우 _deduplicate 메서드를 호출
-        if self.spark._jsparkSession.catalog().tableExists(self.table_name):
-            df_to_write = self._deduplicate(df)
-        else:
-            df_to_write = df
+            df_to_write.write \
+                .partitionBy(self.partitionList) \
+                .mode('overwrite') \
+                .format("parquet") \
+                .saveAsTable(self.write_table)
 
-        df.show()
-
-        df_to_write.write.partitionBy(self.standard_col).mode('overwrite').format("parquet").saveAsTable(
-            self.table_name)
-
-        logger.info("Success Write")
+            logger.info("성공적으로 적으로 DataFrame을 저장하였습니다.")
+        except Exception as e:
+            logger.error(f"데이터 저장에 실패하였습니다. Error: {e}")
+            sys.exit(407)
 
     def _deduplicate(self, df: DataFrame) -> DataFrame:
         try:
-            # 해달 날짜의 데이터 만 들고 온다
-            origin_df = (self.spark.sql(f"SELECT * FROM {self.table_name}")
-                         .filter(F.col("cre_dtm") == F.lit(self.base_dt.strftime("%Y-%m-%d")))
-                         )
+            origin_df = self.spark.sql(f"""
+            SELECT * 
+            FROM {self.write_table}
+            WHERE cre_dtm = '{self.base_dt}'
+            """)
+
             union_df = origin_df.unionAll(df.select(*origin_df.columns))
             window = Window.partitionBy('traceId').orderBy(F.col('etl_cre_dtm').desc())
 
@@ -102,21 +99,45 @@ class json_to_parquet(etl_base):
 
             return deduplicated_df
         except Exception as e:
-            raise RuntimeError(f"Failed to deduplicate DataFrame. Error: {str(e)}")
+            logger.error(f"DataFrame 중복 제거를 실패했습니다. Error: {str(e)}")
+            sys.exit(408)
 
+    # 테이블 유무 체크
+    def table_exists(self, write_table):
+        return self.spark._jsparkSession.catalog().tableExists(write_table)
+
+    # Json File 유무 체크
     def _path_exists(self, path: str) -> bool:
         hadoop_conf = self.spark._jsc.hadoopConfiguration()
         hadoop_fs = self.spark._jvm.org.apache.hadoop.fs.FileSystem.get(hadoop_conf)
         return hadoop_fs.exists(self.spark._jvm.org.apache.hadoop.fs.Path(path))
 
+    # Json 파일 가져오기
+    def get_json_path(self):
+        if self.run_env == "prod":
+            json_path = os.path.join(self.read_path, self.base_dt.strftime("%Y-%m-%d"), '*/*.json')
+            if not self._path_exists(json_path):
+                logger.error("Json File을 찾을 수 없습니다.")
+                sys.exit(404)
+            return json_path
+        else:
+            return self.read_path
+
 
 if __name__ == "__main__":
+    logger.info('================================================')
+    logger.info('')
     logger.info('ETL Job Started')
-    path = "/data/ingestion/"
+    logger.info('ETL Info')
+    logger.info('ETL name : Json To Parquet')
     try:
-        json_to_parquet().run(path_or_table=path)
+        json_to_parquet().run()
         logger.info('ETL Job Completed Successfully')
+        logger.info('')
+        logger.info('================================================')
         sys.exit(0)
     except Exception as e:
         logger.error(f"ETL Job Failed: {e}")
+        logger.info('')
+        logger.info('================================================')
         sys.exit(1)

@@ -39,42 +39,54 @@ class highest_number_of_views(etl_base):
             AND path='_api_v1_product_(id)'
             """)
 
-            return product_list
+            if product_list.rdd.isEmpty():
+                logger.error("DataFrame이 비어 있습니다.")
+                sys.exit(404)
+            else:
+                logger.info(f"성공적으로 {self.read_table}의 테이블에서 데이터를 읽어 들였습니다.")
+                return product_list
 
-        except AnalysisException as e:
-            raise ValueError(f"Failed to read from table {self.read_table}. Error: {str(e)}")
+        except Exception as e:
+            logger.error(f"{self.read_table} 테이블을 찾을 수 없거나 예기치 못한 오류로 인하여 데이터를 불러오지 못하였습니다."
+                         f" Error: {str(e)}")
+            sys.exit(404)
 
     def process(self, df: DataFrame) -> DataFrame:
-        return (
-            df
-            .groupBy("product_id", "cre_dtm", "etl_cre_dtm")
-            .count()
-            .orderBy(F.col("count").desc())
-        )
+        try:
+            df = (
+                df
+                .groupBy("product_id", "cre_dtm", "etl_cre_dtm")
+                .count()
+                .orderBy(F.col("count").desc())
+            )
+
+            return df
+        except Exception as e:
+            logger.error(f"DataFrame 처리 하는 도중 오류가 발생했습니다. Error: {str(e)}")
+            sys.exit(406)
 
     def write(self, df: DataFrame) -> None:
+        try:
+            df_to_write = self._deduplicate(df) if self.table_exists(self.write_table) else df
 
-        # 디렉토리 존재 여부를 확인하고, 존재하는 경우 _deduplicate 메서드를 호출
-        if self.spark._jsparkSession.catalog().tableExists(self.write_table):
-            df_to_write = self._deduplicate(df)
-        else:
-            df_to_write = df
+            df.show()
 
-        df.show()
+            df_to_write.write \
+                .partitionBy(self.partitionList) \
+                .mode('overwrite') \
+                .format("parquet") \
+                .saveAsTable(self.write_table)
 
-        df_to_write.write.partitionBy(self.partitionList) \
-            .mode('overwrite') \
-            .format("parquet") \
-            .saveAsTable(self.write_table)
-
-        logger.info("====== Success Write ======")
+            logger.info("성공적으로 적으로 DataFrame을 저장하였습니다.")
+        except Exception as e:
+            logger.error(f"데이터 저장에 실패하였습니다. Error: {str(e)}")
+            sys.exit(407)
 
     def _deduplicate(self, df: DataFrame) -> DataFrame:
         try:
+            origin_df = self.spark.sql(f"SELECT * FROM {self.write_table}") \
+                .filter(F.col("cre_dtm") == self.base_dt)
 
-            origin_df = (self.spark.sql(f"SELECT * FROM {self.write_table}")
-                         .filter(F.col("cre_dtm") == self.base_dt)
-                         )
             union_df = origin_df.unionAll(df.select(*origin_df.columns))
             window = Window.partitionBy('product_id').orderBy(F.col('etl_cre_dtm').desc())
 
@@ -84,19 +96,32 @@ class highest_number_of_views(etl_base):
 
             return deduplicated_df
         except Exception as e:
-            raise RuntimeError(f"Failed to deduplicate DataFrame. Error: {str(e)}")
+            logger.error(f"DataFrame 중복 제거를 실패했습니다. Error: {str(e)}")
+            sys.exit(408)
 
     def _path_exists(self, path: str) -> bool:
         hadoop_conf = self.spark._jsc.hadoopConfiguration()
         hadoop_fs = self.spark._jvm.org.apache.hadoop.fs.FileSystem.get(hadoop_conf)
         return hadoop_fs.exists(self.spark._jvm.org.apache.hadoop.fs.Path(path))
 
+    def table_exists(self, write_table):
+        return self.spark._jsparkSession.catalog().tableExists(write_table)
+
 
 if __name__ == "__main__":
+    logger.info('================================================')
+    logger.info('')
+    logger.info('ETL Job Started')
+    logger.info('ETL Info')
+    logger.info('ETL name : Highest Number Of Views')
     try:
         highest_number_of_views().run()
         logger.info('ETL Job Completed Successfully')
+        logger.info('')
+        logger.info('================================================')
         sys.exit(0)
     except Exception as e:
         logger.error(f"ETL Job Failed: {e}")
+        logger.info('')
+        logger.info('================================================')
         sys.exit(1)
