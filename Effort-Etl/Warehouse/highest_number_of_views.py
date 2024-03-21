@@ -47,8 +47,9 @@ class highest_number_of_views(etl_base):
                 return product_list
 
         except Exception as e:
-            logger.error(f"{self.read_table} 테이블을 읽어 들이지 못했습니다. Error: {str(e)}")
-            sys.exit(400)
+            logger.error(f"{self.read_table} 테이블을 찾을 수 없거나 예기치 못한 오류로 인하여 데이터를 불러오지 못하였습니다."
+                         f" Error: {str(e)}")
+            sys.exit(404)
 
     def process(self, df: DataFrame) -> DataFrame:
         try:
@@ -62,7 +63,7 @@ class highest_number_of_views(etl_base):
             return df
         except Exception as e:
             logger.error(f"DataFrame 처리 하는 도중 오류가 발생했습니다. Error: {str(e)}")
-
+            sys.exit(406)
 
     def write(self, df: DataFrame) -> None:
         try:
@@ -79,6 +80,7 @@ class highest_number_of_views(etl_base):
             logger.info("성공적으로 적으로 DataFrame을 저장하였습니다.")
         except Exception as e:
             logger.error(f"데이터 저장에 실패하였습니다. Error: {str(e)}")
+            sys.exit(407)
 
     def _deduplicate(self, df: DataFrame) -> DataFrame:
         try:
@@ -95,6 +97,7 @@ class highest_number_of_views(etl_base):
             return deduplicated_df
         except Exception as e:
             logger.error(f"DataFrame 중복 제거를 실패했습니다. Error: {str(e)}")
+            sys.exit(408)
 
     def _path_exists(self, path: str) -> bool:
         hadoop_conf = self.spark._jsc.hadoopConfiguration()

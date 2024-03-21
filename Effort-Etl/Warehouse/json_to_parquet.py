@@ -48,16 +48,22 @@ class json_to_parquet(etl_base):
 
         if df.rdd.isEmpty():
             logger.error("DataFrame이 비어 있습니다.")
-            sys.exit(400)
+            sys.exit(405)
         else:
             logger.info("성공적으로 Json 파일을 읽어 들였습니다.")
             return df
 
     def process(self, df: DataFrame) -> DataFrame:
-        return (df
-                .withColumn("etl_dtm", F.current_timestamp())
-                .withColumn("cre_dtm", F.lit(self.base_dt.strftime("%Y-%m-%d")))
-                )
+        try:
+            df = (df
+                  .withColumn("etl_dtm", F.current_timestamp())
+                  .withColumn("cre_dtm", F.lit(self.base_dt.strftime("%Y-%m-%d")))
+                  )
+
+            return df
+        except Exception as e:
+            logger.error(f"DataFrame 처리 하는 도중 오류가 발생했습니다. Error: {str(e)}")
+            sys.exit(406)
 
     def write(self, df: DataFrame) -> None:
         try:
@@ -73,7 +79,8 @@ class json_to_parquet(etl_base):
 
             logger.info("성공적으로 적으로 DataFrame을 저장하였습니다.")
         except Exception as e:
-            raise RuntimeError(f"데이터 저장에 실패하였습니다. Error: {e}")
+            logger.error(f"데이터 저장에 실패하였습니다. Error: {e}")
+            sys.exit(407)
 
     def _deduplicate(self, df: DataFrame) -> DataFrame:
         try:
@@ -92,7 +99,8 @@ class json_to_parquet(etl_base):
 
             return deduplicated_df
         except Exception as e:
-            raise RuntimeError(f"DataFrame 중복 제거를 실패했습니다. Error: {str(e)}")
+            logger.error(f"DataFrame 중복 제거를 실패했습니다. Error: {str(e)}")
+            sys.exit(408)
 
     # 테이블 유무 체크
     def table_exists(self, write_table):
