@@ -1,10 +1,9 @@
 import logging
-import os
 import sys
 
 import pyspark.sql.functions as F
-import pyspark.sql.types as T
 from pyspark.sql import DataFrame, Window
+from pyspark.sql.utils import AnalysisException
 
 # 로깅 설정
 logging.basicConfig(level=logging.INFO, format='%(asctime)s %(levelname)s %(message)s')
@@ -17,48 +16,49 @@ except ImportError:
     from Common.etl_base import etl_base
 
 
-class json_to_parquet(etl_base):
-    WRITE_TABLE_PROD = "bdp_wh.log_ingest"
-    WRITE_TABLE_LOCAL = "log_ingest"
-    READ_PATH_PROD = "/data/ingestion/"
-    READ_PATH_LOCAL = "../data/JsonToParquet-A.json"
+class highest_number_of_views(etl_base):
+    READ_TABLE_PROD = "bdp_wh.path"
+    READ_TABLE_LOCAL = "path"
+    WRITE_TABLE_PROD = "bdp_wh.top_views"
+    WRITE_TABLE_LOCAL = "top_views"
 
     def __init__(self):
         super().__init__()
-        self.read_path = self.READ_PATH_PROD if self.run_env == "prod" else self.READ_PATH_LOCAL
+
+        self.read_table = self.READ_TABLE_PROD if self.run_env == "prod" else self.READ_TABLE_LOCAL
         self.write_table = self.WRITE_TABLE_PROD if self.run_env == "prod" else self.WRITE_TABLE_LOCAL
         self.partitionList = ["cre_dtm"]
 
     def read(self) -> DataFrame:
-        schema = T.StructType([
-            T.StructField("traceId", T.StringType(), True),
-            T.StructField("clientIp", T.StringType(), True),
-            T.StructField("time", T.StringType(), True),
-            T.StructField("path", T.StringType(), True),
-            T.StructField("method", T.StringType(), True),
-            T.StructField("request", T.StringType(), True),
-            T.StructField("response", T.StringType(), True),
-            T.StructField("statusCode", T.StringType(), True),
-            T.StructField("elapsedTimeMillis", T.IntegerType(), True)
-        ])
 
-        json_path = self.get_json_path()
+        try:
+            product_list = self.spark.sql(f"""
+            SELECT *, get_json_object(response, '$.id') as product_id
+            FROM {self.read_table}
+            WHERE cre_dtm='{self.base_dt}'
+            AND path='_api_v1_product_(id)'
+            """)
 
-        df = self.spark.read.schema(schema).json(json_path)
+            if product_list.rdd.isEmpty():
+                logger.error("DataFrame이 비어 있습니다.")
+                sys.exit(404)
+            else:
+                logger.info(f"성공적으로 {self.read_table}의 테이블에서 데이터를 읽어 들였습니다.")
+                return product_list
 
-        if df.rdd.isEmpty():
-            logger.error("DataFrame이 비어 있습니다.")
-            sys.exit(405)
-        else:
-            logger.info("성공적으로 Json 파일을 읽어 들였습니다.")
-            return df
+        except Exception as e:
+            logger.error(f"{self.read_table} 테이블을 찾을 수 없거나 예기치 못한 오류로 인하여 데이터를 불러오지 못하였습니다."
+                         f" Error: {str(e)}")
+            sys.exit(404)
 
     def process(self, df: DataFrame) -> DataFrame:
         try:
-            df = (df
-                  .withColumn("etl_cre_dtm", F.current_timestamp())
-                  .withColumn("cre_dtm", F.lit(self.base_dt.strftime("%Y-%m-%d")))
-                  )
+            df = (
+                df
+                .groupBy("product_id", "cre_dtm", "etl_cre_dtm")
+                .count()
+                .orderBy(F.col("count").desc())
+            )
 
             return df
         except Exception as e:
@@ -79,19 +79,16 @@ class json_to_parquet(etl_base):
 
             logger.info("성공적으로 적으로 DataFrame을 저장하였습니다.")
         except Exception as e:
-            logger.error(f"데이터 저장에 실패하였습니다. Error: {e}")
+            logger.error(f"데이터 저장에 실패하였습니다. Error: {str(e)}")
             sys.exit(407)
 
     def _deduplicate(self, df: DataFrame) -> DataFrame:
         try:
-            origin_df = self.spark.sql(f"""
-            SELECT * 
-            FROM {self.write_table}
-            WHERE cre_dtm = '{self.base_dt}'
-            """)
+            origin_df = self.spark.sql(f"SELECT * FROM {self.write_table}") \
+                .filter(F.col("cre_dtm") == self.base_dt)
 
             union_df = origin_df.unionAll(df.select(*origin_df.columns))
-            window = Window.partitionBy('traceId').orderBy(F.col('etl_cre_dtm').desc())
+            window = Window.partitionBy('product_id').orderBy(F.col('etl_cre_dtm').desc())
 
             deduplicated_df = (union_df.withColumn('row_no', F.row_number().over(window))
                                .filter(F.col("row_no") == 1).drop('row_no')
@@ -102,26 +99,13 @@ class json_to_parquet(etl_base):
             logger.error(f"DataFrame 중복 제거를 실패했습니다. Error: {str(e)}")
             sys.exit(408)
 
-    # 테이블 유무 체크
-    def table_exists(self, write_table):
-        return self.spark._jsparkSession.catalog().tableExists(write_table)
-
-    # Json File 유무 체크
     def _path_exists(self, path: str) -> bool:
         hadoop_conf = self.spark._jsc.hadoopConfiguration()
         hadoop_fs = self.spark._jvm.org.apache.hadoop.fs.FileSystem.get(hadoop_conf)
         return hadoop_fs.exists(self.spark._jvm.org.apache.hadoop.fs.Path(path))
 
-    # Json 파일 가져오기
-    def get_json_path(self):
-        if self.run_env == "prod":
-            json_path = os.path.join(self.read_path, self.base_dt.strftime("%Y-%m-%d"), '*/*.json')
-            if not self._path_exists(json_path):
-                logger.error("Json File을 찾을 수 없습니다.")
-                sys.exit(404)
-            return json_path
-        else:
-            return self.read_path
+    def table_exists(self, write_table):
+        return self.spark._jsparkSession.catalog().tableExists(write_table)
 
 
 if __name__ == "__main__":
@@ -129,9 +113,9 @@ if __name__ == "__main__":
     logger.info('')
     logger.info('ETL Job Started')
     logger.info('ETL Info')
-    logger.info('ETL name : Json To Parquet')
+    logger.info('ETL name : Highest Number Of Views')
     try:
-        json_to_parquet().run()
+        highest_number_of_views().run()
         logger.info('ETL Job Completed Successfully')
         logger.info('')
         logger.info('================================================')
