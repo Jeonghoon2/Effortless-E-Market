@@ -69,7 +69,7 @@ class json_to_parquet(etl_base):
         try:
             df_to_write = self._deduplicate(df) if self.table_exists(self.write_table) else df
 
-            df.show(100)
+            df.show()
 
             df_to_write.write \
                 .partitionBy(self.partitionList) \
