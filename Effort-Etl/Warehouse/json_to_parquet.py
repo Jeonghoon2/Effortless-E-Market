@@ -56,7 +56,7 @@ class json_to_parquet(etl_base):
     def process(self, df: DataFrame) -> DataFrame:
         try:
             df = (df
-                  .withColumn("etl_dtm", F.current_timestamp())
+                  .withColumn("etl_cre_dtm", F.current_timestamp())
                   .withColumn("cre_dtm", F.lit(self.base_dt.strftime("%Y-%m-%d")))
                   )
 
