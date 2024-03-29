@@ -25,11 +25,12 @@ class json_to_parquet(etl_base):
 
     def __init__(self):
         super().__init__()
-        self.read_path = self.READ_PATH_PROD if self.run_env == "prod" else self.READ_PATH_LOCAL
-        self.write_table = self.WRITE_TABLE_PROD if self.run_env == "prod" else self.WRITE_TABLE_LOCAL
+        self.read_path = None
+        self.write_table = None
         self.partitionList = ["cre_dtm"]
 
     def read(self) -> DataFrame:
+
         schema = T.StructType([
             T.StructField("traceId", T.StringType(), True),
             T.StructField("clientIp", T.StringType(), True),
@@ -42,6 +43,9 @@ class json_to_parquet(etl_base):
             T.StructField("elapsedTimeMillis", T.IntegerType(), True)
         ])
 
+        self.read_path = self.READ_PATH_PROD if self.run_env == "prod" else self.READ_PATH_LOCAL
+
+        logger.info("Running ENV == " + self.run_env)
         json_path = self.get_json_path()
 
         df = self.spark.read.schema(schema).json(json_path)
@@ -56,7 +60,7 @@ class json_to_parquet(etl_base):
     def process(self, df: DataFrame) -> DataFrame:
         try:
             df = (df
-                  .withColumn("etl_cre_dtm", F.current_timestamp())
+                  .withColumn("etl_dtm", F.current_timestamp())
                   .withColumn("cre_dtm", F.lit(self.base_dt.strftime("%Y-%m-%d")))
                   )
 
@@ -66,6 +70,8 @@ class json_to_parquet(etl_base):
             sys.exit(406)
 
     def write(self, df: DataFrame) -> None:
+        self.write_table = self.WRITE_TABLE_PROD if self.run_env == "prod" else self.WRITE_TABLE_LOCAL
+
         try:
             df_to_write = self._deduplicate(df) if self.table_exists(self.write_table) else df
 
@@ -87,11 +93,10 @@ class json_to_parquet(etl_base):
             origin_df = self.spark.sql(f"""
             SELECT * 
             FROM {self.write_table}
-            WHERE cre_dtm = '{self.base_dt}'
             """)
 
             union_df = origin_df.unionAll(df.select(*origin_df.columns))
-            window = Window.partitionBy('traceId').orderBy(F.col('etl_cre_dtm').desc())
+            window = Window.partitionBy('traceId').orderBy(F.col('etl_dtm').desc())
 
             deduplicated_df = (union_df.withColumn('row_no', F.row_number().over(window))
                                .filter(F.col("row_no") == 1).drop('row_no')
@@ -108,20 +113,25 @@ class json_to_parquet(etl_base):
 
     # Json File 유무 체크
     def _path_exists(self, path: str) -> bool:
-        hadoop_conf = self.spark._jsc.hadoopConfiguration()
-        hadoop_fs = self.spark._jvm.org.apache.hadoop.fs.FileSystem.get(hadoop_conf)
-        return hadoop_fs.exists(self.spark._jvm.org.apache.hadoop.fs.Path(path))
+        try:
+            hadoop_conf = self.spark._jsc.hadoopConfiguration()
+            hadoop_fs = self.spark._jvm.org.apache.hadoop.fs.FileSystem.get(hadoop_conf)
+            return hadoop_fs.exists(self.spark._jvm.org.apache.hadoop.fs.Path(path))
+        except Exception as e:
+            logger.error(f"Hadoop 접근에 실패하였습니다.: {e}")
+            return False
 
-    # Json 파일 가져오기
     def get_json_path(self):
-        if self.run_env == "prod":
-            json_path = os.path.join(self.read_path, self.base_dt.strftime("%Y-%m-%d"), '*/*.json')
-            if not self._path_exists(json_path):
-                logger.error("Json File을 찾을 수 없습니다.")
-                sys.exit(404)
-            return json_path
-        else:
-            return self.read_path
+
+        if not self._path_exists(self.read_path):
+            logger.error(f"Json File을 찾을 수 없습니다.: {self.read_path}")
+            sys.exit(404)
+
+        json_path = os.path.join(self.read_path, self.base_dt.strftime("%Y-%m-%d"), '*/*.json')
+
+        logger.info(json_path)
+
+        return json_path
 
 
 if __name__ == "__main__":
