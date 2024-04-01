@@ -123,11 +123,14 @@ class json_to_parquet(etl_base):
 
     def get_json_path(self):
 
-        if not self._path_exists(self.read_path):
-            logger.error(f"Json File을 찾을 수 없습니다.: {self.read_path}")
-            sys.exit(404)
+        if self.run_env == "prod":
+            if not self._path_exists(self.read_path):
+                logger.error(f"Json File을 찾을 수 없습니다.: {self.read_path}")
+                sys.exit(404)
 
-        json_path = os.path.join(self.read_path, self.base_dt.strftime("%Y-%m-%d"), '*/*.json')
+            json_path = os.path.join(self.read_path, self.base_dt.strftime("%Y-%m-%d"), '*/*.json')
+        else:
+            json_path = self.read_path
 
         logger.info(json_path)
 

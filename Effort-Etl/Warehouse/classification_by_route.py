@@ -25,14 +25,18 @@ class classification_by_route(etl_base):
     def __init__(self):
         super().__init__()
         self.path_udf = F.udf(self.path_transform, StringType())
-        self.read_table = self.READ_TABLE_PROD if self.run_env == "prod" else self.READ_TABLE_LOCAL
-        self.write_table = self.WRITE_TABLE_PROD if self.run_env == "prod" else self.WRITE_TABLE_LOCAL
+        self.read_table = None
+        self.write_table = None
         self.partitionList = ["method", "path", "cre_dtm"]
 
     def read(self) -> DataFrame:
+        self.read_table = self.READ_TABLE_PROD if self.run_env == "prod" else self.READ_TABLE_LOCAL
         try:
 
-            df = self.spark.sql(f"SELECT * FROM {self.read_table}")
+            df = self.spark.sql(f"""
+                            SELECT * 
+                            FROM {self.read_table} 
+                            WHERE cre_dtm = '{self.base_dt.strftime('%Y-%m-%d')}'""")
 
             if df.rdd.isEmpty():
                 logger.error("DataFrame이 비어 있습니다.")
@@ -50,8 +54,7 @@ class classification_by_route(etl_base):
         try:
             df = (
                 df
-                .drop("clientIp", "elapsedTimeMillis", "etl_hh", "etl_cre_dtm")
-                .withColumn("etl_cre_dtm", F.current_timestamp())
+                .withColumn("etl_dtm", F.current_timestamp())
                 .withColumn("path", F.regexp_replace("path", "/", "_"))
             )
             return df.withColumn("path", self.path_udf(F.col("path")))
@@ -61,6 +64,8 @@ class classification_by_route(etl_base):
             sys.exit(406)
 
     def write(self, df: DataFrame) -> None:
+        self.write_table = self.WRITE_TABLE_PROD if self.run_env == "prod" else self.WRITE_TABLE_LOCAL
+
         try:
             df_to_write = self._deduplicate(df) if self.table_exists(self.write_table) else df
 
@@ -77,10 +82,10 @@ class classification_by_route(etl_base):
 
     def _deduplicate(self, df: DataFrame) -> DataFrame:
         try:
-            origin_df = self.spark.sql(f"SELECT * FROM {self.write_table}") \
-                .filter(F.col("cre_dtm") == self.base_dt)
+            origin_df = self.spark.sql(f"SELECT * FROM {self.write_table}")
+
             union_df = origin_df.unionAll(df.select(*origin_df.columns))
-            window = Window.partitionBy('traceId').orderBy(F.col('etl_cre_dtm').desc())
+            window = Window.partitionBy('traceId').orderBy(F.col('etl_dtm').desc())
 
             deduplicated_df = (union_df.withColumn('row_no', F.row_number().over(window))
                                .filter(F.col("row_no") == 1).drop('row_no')
