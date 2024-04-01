@@ -15,7 +15,7 @@ DAG_ID = os.path.basename(__file__).replace(".pyc", "").replace(".py", "")
 with DAG(
         dag_id=DAG_ID,
         default_args=default_args,
-        schedule_interval='0 9 * * *',
+        schedule_interval='00 15 * * *',
         catchup=False,
         start_date=datetime(2024, 1, 20),
         dagrun_timeout=timedelta(hours=8),
@@ -46,6 +46,7 @@ with DAG(
         hadoop_user_name="hive",
         python_env_name="bdp-default",
         python_env_version="latest",
+        dag=dag
     )
 
     json_to_parquet_task
