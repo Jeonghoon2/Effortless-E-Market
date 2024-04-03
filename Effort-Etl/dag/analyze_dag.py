@@ -15,13 +15,13 @@ DAG_ID = os.path.basename(__file__).replace(".pyc", "").replace(".py", "")
 
 etl_script_list = [
     # 해당 일을 기준으로 조회수 가 높은 상품을 분석
-    # ('highest_number_of_views', 'highest_number_of_views.py'),
+    ('highest_number_of_views', 'highest_number_of_views.py'),
     # 해당 일을 기준으로 판매량이 가장 높은 상품을 분석
     ('sales_rank', 'sales_rank.py'),
     # 해당 일을 기준으로 년, 월, 일, 시간, 분을 기준으로 판매자의 판매량, 수익을 분석
     ('seller_sales_aggregation', 'seller_sales_aggregation.py'),
     # 해당 일을 기준으로 판매자가 등록한 상품의 카테고리 별 판매 순위 분석
-    # ('category_by_sales', 'category_by_sales.py'),
+    ('category_by_sales', 'category_by_sales.py'),
 ]
 
 with DAG(
