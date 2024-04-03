@@ -15,20 +15,21 @@ except ImportError:
     from Common.etl_base import etl_base
 
 
-class seller_sales_aggregation(etl_base):
+class category_by_sales(etl_base):
     READ_TABLE_PROD = "bdp_wh.path"
     READ_TABLE_LOCAL = "path"
-    WRITE_TABLE_PROD = "bdp_wh.seller_sales_agg"
-    WRITE_TABLE_LOCAL = "seller_sales_agg"
+    WRITE_TABLE_PROD = "bdp_wh.category_by_sales"
+    WRITE_TABLE_LOCAL = "category_by_sales"
 
     def __init__(self):
         super().__init__()
 
         self.read_table = None
         self.write_table = None
-        self.partitionList = ["cre_dtm", "seller_id", "year", "month", "day", "hour"]
+        self.partitionList = ["cre_dtm", "category_id"]
 
     def read(self) -> DataFrame:
+
         self.read_table = self.READ_TABLE_PROD if self.run_env == "prod" else self.READ_TABLE_LOCAL
 
         try:
@@ -36,9 +37,10 @@ class seller_sales_aggregation(etl_base):
                 f"""
                     SELECT *
                     FROM {self.read_table}
-                    WHERE method='POST' 
-                    AND path='_api_v1_order' 
-                    AND cre_dtm = '{self.base_dt.strftime('%Y-%m-%d')}'""")
+                    WHERE method='POST'
+                    AND path='_api_v1_order'
+                    AND cre_dtm='{self.base_dt.strftime('%Y-%m-%d')}'
+                """)
 
             if df.rdd.isEmpty():
                 logger.error("DataFrame이 비어 있습니다.")
@@ -78,36 +80,40 @@ class seller_sales_aggregation(etl_base):
             df = df.withColumn("orderDetails", F.explode("response_parsed.orderDetailList"))
             df = df.select(
                 F.col("orderDetails.sellerId").alias("seller_id"),
-                F.col("orderDetails.productId").alias("productId"),
-                F.col("orderDetails.productName").alias("productName"),
-                F.col("orderDetails.categoryId").alias("categoryId"),
-                F.col("orderDetails.categoryName").alias("categoryName"),
-                F.col("orderDetails.count").alias("count"),
-                F.col("orderDetails.totalPrice").alias("totalPrice"),
-                F.to_timestamp(F.col("response_parsed.createAt")).alias("createAt"),
+                F.col("orderDetails.productId").alias("product_id"),
+                F.col("orderDetails.productName").alias("product_name"),
+                F.col("orderDetails.categoryId").alias("category_id"),
+                F.col("orderDetails.categoryName").alias("category_name"),
+                F.col("orderDetails.count").cast("integer").alias("count"),
+                F.col("orderDetails.totalPrice").cast("integer").alias("total_price"),
+                F.to_timestamp(F.col("response_parsed.createAt")).alias("create_at"),
                 "cre_dtm",
                 "etl_dtm"
             )
 
-            df = df.withColumn("year", F.year("createAt")) \
-                .withColumn("month", F.month("createAt")) \
-                .withColumn("day", F.dayofmonth("createAt")) \
-                .withColumn("hour", F.hour("createAt"))
+            order_by = Window.partitionBy("category_id").orderBy(F.desc("count"))
+            df = df \
+                .withColumn("rank", F.rank().over(order_by)) \
+                .withColumn("etl_dtm", F.current_timestamp())
 
-            sales_agg = df.groupBy("seller_id", "year", "month", "day", "hour", "cre_dtm", "etl_dtm") \
-                .agg(
+            # 카테고리 및 상품별 집계
+            df_agg = df.groupBy("category_id", "product_id", "product_name", "cre_dtm", "etl_dtm").agg(
                 F.sum("count").alias("total_sales"),
-                F.sum("totalPrice").alias("total_revenue")
-            )
+                F.sum("total_price").alias("total_revenue")
+            ).orderBy("categoryId", F.desc("total_sales"))
 
-            return sales_agg
+            df_agg.show(truncate=False)
+
+            return df_agg
 
         except Exception as e:
             logger.error(f"DataFrame 처리 하는 도중 오류가 발생했습니다. Error: {str(e)}")
             sys.exit(406)
 
     def write(self, df: DataFrame) -> None:
+
         self.write_table = self.WRITE_TABLE_PROD if self.run_env == "prod" else self.WRITE_TABLE_LOCAL
+
         try:
             df_to_write = self._deduplicate(df) if self.table_exists(self.write_table) else df
 
@@ -144,7 +150,7 @@ class seller_sales_aggregation(etl_base):
 
 if __name__ == "__main__":
     try:
-        seller_sales_aggregation().run()
+        category_by_sales().run()
         logger.info('ETL Job Completed Successfully')
         sys.exit(0)
     except Exception as e:

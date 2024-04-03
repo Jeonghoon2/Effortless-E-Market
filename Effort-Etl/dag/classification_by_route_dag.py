@@ -1,6 +1,7 @@
 import os
 from datetime import timedelta, datetime
 from airflow import DAG
+from airflow.sensors.external_task_sensor import ExternalTaskSensor
 from operators.spark import PysparkClusterOperator, SparkJobResource
 
 default_args = {
@@ -15,19 +16,33 @@ DAG_ID = os.path.basename(__file__).replace(".pyc", "").replace(".py", "")
 with DAG(
         dag_id=DAG_ID,
         default_args=default_args,
-        schedule_interval='00 15 * * *',
+        schedule_interval='5 15 * * *',
         catchup=False,
         start_date=datetime(2024, 1, 20),
         dagrun_timeout=timedelta(hours=8),
         max_active_runs=3,
         concurrency=1,
-        tags=['ingestion', 'json', 'parquet']
+        tags=['classification', 'path']
 ) as dag:
+
+    # ExternalTaskSensor
+    wait_for_json_to_parquet_etl = ExternalTaskSensor(
+        task_id='wait_for_json_to_parquet_etl',
+        external_dag_id='json_to_parquet_dag',
+        external_task_id='json_to_parquet',
+        execution_delta=timedelta(minutes=5),
+        allowed_states=['success'],
+        timeout=timedelta(minutes=60),
+        poke_interval=timedelta(minutes=1),
+        mode='poke',
+    )
+
     airflow_root = "/usr/bdp/airflow/dags"
     execution_date = "{{ execution_date.in_timezone('Asia/Seoul').strftime('%Y-%m-%d') }}"
-    json_to_parquet_task = PysparkClusterOperator(
-        task_id="json_to_parquet",
-        source_path=f"{airflow_root}/spark/json_to_parquet.py",
+
+    classification_by_route_task = PysparkClusterOperator(
+        task_id="classification_by_route_task",
+        source_path=f"{airflow_root}/spark/classification_by_route.py",
         job_resource=SparkJobResource(
             driver_core=1,
             driver_mem="2G",
@@ -46,7 +61,6 @@ with DAG(
         hadoop_user_name="hive",
         python_env_name="bdp-default",
         python_env_version="latest",
-        dag=dag
     )
 
-    json_to_parquet_task
+    wait_for_json_to_parquet_etl >> classification_by_route_task

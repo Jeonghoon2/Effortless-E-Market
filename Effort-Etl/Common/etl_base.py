@@ -19,6 +19,7 @@ class etl_base(metaclass=ABCMeta):
         self.spark = create_session()
         self.parser: argparse.ArgumentParser = argparse.ArgumentParser()
         self.parser.add_argument('--base_dt', type=lambda s: datetime.strptime(s, '%Y-%m-%d'), required=False)
+        # self.parser.add_argument('--base_dt', required=False)
         self.parser.add_argument('--run_env', required=True)
         self.args = {}
         self.base_dt: datetime = None
@@ -45,8 +46,11 @@ class etl_base(metaclass=ABCMeta):
         self.args = self.parser.parse_args().__dict__
         self.base_dt = self.args.get('base_dt')
         self.run_env = self.args.get('run_env')
+
         self.prev_dt = self.base_dt - timedelta(days=1)
         self.next_dt = self.base_dt + timedelta(days=1)
+
+        logging.info(self.base_dt.strftime('%Y-%m-%d'))
 
         df = self.read()
         if df is None:

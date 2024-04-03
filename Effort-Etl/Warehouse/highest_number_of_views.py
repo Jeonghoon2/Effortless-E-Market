@@ -25,17 +25,17 @@ class highest_number_of_views(etl_base):
     def __init__(self):
         super().__init__()
 
-        self.read_table = self.READ_TABLE_PROD if self.run_env == "prod" else self.READ_TABLE_LOCAL
-        self.write_table = self.WRITE_TABLE_PROD if self.run_env == "prod" else self.WRITE_TABLE_LOCAL
+        self.read_table = None
+        self.write_table = None
         self.partitionList = ["cre_dtm"]
 
     def read(self) -> DataFrame:
-
+        self.read_table = self.READ_TABLE_PROD if self.run_env == "prod" else self.READ_TABLE_LOCAL
         try:
             product_list = self.spark.sql(f"""
             SELECT *, get_json_object(response, '$.id') as product_id
             FROM {self.read_table}
-            WHERE cre_dtm='{self.base_dt}'
+            WHERE cre_dtm='{self.base_dt.strftime('%Y-%m-%d')}'
             AND path='_api_v1_product_(id)'
             """)
 
@@ -55,7 +55,7 @@ class highest_number_of_views(etl_base):
         try:
             df = (
                 df
-                .groupBy("product_id", "cre_dtm", "etl_cre_dtm")
+                .groupBy("product_id", "cre_dtm", "etl_dtm")
                 .count()
                 .orderBy(F.col("count").desc())
             )
@@ -66,6 +66,9 @@ class highest_number_of_views(etl_base):
             sys.exit(406)
 
     def write(self, df: DataFrame) -> None:
+
+        self.write_table = self.WRITE_TABLE_PROD if self.run_env == "prod" else self.WRITE_TABLE_LOCAL
+        
         try:
             df_to_write = self._deduplicate(df) if self.table_exists(self.write_table) else df
 
@@ -84,11 +87,10 @@ class highest_number_of_views(etl_base):
 
     def _deduplicate(self, df: DataFrame) -> DataFrame:
         try:
-            origin_df = self.spark.sql(f"SELECT * FROM {self.write_table}") \
-                .filter(F.col("cre_dtm") == self.base_dt)
+            origin_df = self.spark.sql(f"SELECT * FROM {self.write_table}")
 
             union_df = origin_df.unionAll(df.select(*origin_df.columns))
-            window = Window.partitionBy('product_id').orderBy(F.col('etl_cre_dtm').desc())
+            window = Window.partitionBy('product_id').orderBy(F.col('etl_dtm').desc())
 
             deduplicated_df = (union_df.withColumn('row_no', F.row_number().over(window))
                                .filter(F.col("row_no") == 1).drop('row_no')

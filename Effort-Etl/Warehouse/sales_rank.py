@@ -25,11 +25,13 @@ class sales_rank(etl_base):
     def __init__(self):
         super().__init__()
 
-        self.read_table = self.READ_TABLE_PROD if self.run_env == "prod" else self.READ_TABLE_LOCAL
-        self.write_table = self.WRITE_TABLE_PROD if self.run_env == "prod" else self.WRITE_TABLE_LOCAL
+        self.read_table = None
+        self.write_table = None
         self.partitionList = ["cre_dtm"]
 
     def read(self) -> DataFrame:
+
+        self.read_table = self.READ_TABLE_PROD if self.run_env == "prod" else self.READ_TABLE_LOCAL
 
         try:
             df = self.spark.sql(f"""
@@ -37,7 +39,7 @@ class sales_rank(etl_base):
             FROM {self.read_table}
             WHERE method='POST'
             AND path='_api_v1_order'
-            AND cre_dtm='{self.base_dt}'
+            AND cre_dtm = '{self.base_dt.strftime('%Y-%m-%d')}'
             """)
 
             if df.rdd.isEmpty():
@@ -60,7 +62,7 @@ class sales_rank(etl_base):
                 T.StructField("memberId", T.IntegerType()),
                 T.StructField("recipientAddress", T.StringType()),
                 T.StructField("createAt", T.StringType()),
-                T.StructField("etl_cre_dtm", T.DateType()),
+                T.StructField("etl_dtm", T.DateType()),
                 T.StructField("cre_dtm", T.DateType()),
                 T.StructField("orderDetailList", T.ArrayType(T.StructType([
                     T.StructField("sellerId", T.IntegerType()),
@@ -80,29 +82,29 @@ class sales_rank(etl_base):
             df = df.withColumn("orderDetail", F.explode(F.col("response_parsed.orderDetailList")))
 
             df = df.select(
-                "orderDetail.productId",
-                "orderDetail.productName",
-                "orderDetail.categoryId",
-                "orderDetail.categoryName",
+                F.col("orderDetail.productId").alias("product_id"),
+                F.col("orderDetail.productName").alias("product_name"),
+                F.col("orderDetail.categoryId").alias("category_id"),
+                F.col("orderDetail.categoryName").alias("category_name"),
                 "cre_dtm",
-                "etl_cre_dtm",
+                "etl_dtm",
                 F.col("orderDetail.count").cast("integer").alias("count"),
                 F.col("orderDetail.totalPrice").cast("integer").alias("totalPrice")
             )
 
-            sales_data = df.groupBy("productId",
-                                    "productName",
-                                    "categoryId",
-                                    "categoryName",
+            sales_data = df.groupBy("product_id",
+                                    "product_name",
+                                    "category_id",
+                                    "category_name",
                                     "cre_dtm",
-                                    "etl_cre_dtm") \
+                                    "etl_dtm") \
                 .agg(
-                F.sum("count").alias("totalSales"),
-                F.sum("totalPrice").alias("totalRevenue")
+                F.sum("count").alias("total_sales"),
+                F.sum("totalPrice").alias("total_revenue")
             ) \
-                .orderBy(F.col("totalSales").desc(), F.col("totalRevenue").desc())
+                .orderBy(F.col("total_sales").desc(), F.col("total_revenue").desc())
 
-            sales_data = sales_data.withColumn("etl_cre_dtm", F.current_timestamp())
+            sales_data = sales_data.withColumn("etl_dtm", F.current_timestamp())
             sales_data.show()
             return sales_data
 
@@ -111,6 +113,9 @@ class sales_rank(etl_base):
             sys.exit(406)
 
     def write(self, df: DataFrame) -> None:
+
+        self.write_table = self.WRITE_TABLE_PROD if self.run_env == "prod" else self.WRITE_TABLE_LOCAL
+
         try:
             df_to_write = self._deduplicate(df) if self.table_exists(self.write_table) else df
 
@@ -130,7 +135,8 @@ class sales_rank(etl_base):
             origin_df = self.spark.sql(f"SELECT * FROM {self.write_table}") \
                 .filter(F.col("cre_dtm") == self.base_dt)
             union_df = origin_df.unionAll(df.select(*origin_df.columns))
-            window = Window.partitionBy('productId').orderBy(F.col('etl_cre_dtm').desc())
+
+            window = Window.partitionBy('product_id').orderBy(F.col('etl_dtm').desc())
 
             deduplicated_df = (union_df.withColumn('row_no', F.row_number().over(window))
                                .filter(F.col("row_no") == 1).drop('row_no')
