@@ -59,6 +59,9 @@ class json_to_parquet(etl_base):
 
     def process(self, df: DataFrame) -> DataFrame:
         try:
+
+            df = df.filter((F.col("statusCode") == "200") | (F.col("statusCode")== "201"))
+
             df = (df
                   .withColumn("etl_dtm", F.current_timestamp())
                   .withColumn("cre_dtm", F.lit(self.base_dt.strftime("%Y-%m-%d")))
