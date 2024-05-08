@@ -2,6 +2,7 @@ package com.effortless.effortlessmarket.domain.cart.dto;
 
 import lombok.Builder;
 import lombok.Data;
+import lombok.Getter;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -16,8 +17,8 @@ public class CartRequest {
         private Integer count;
     }
 
+
     @Data
-    @Builder
     public static class deleteItem{
         private List<Long> cartIds = new ArrayList<>();
     }

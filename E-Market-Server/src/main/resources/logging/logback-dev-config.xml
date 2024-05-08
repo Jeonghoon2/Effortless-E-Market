@@ -9,23 +9,25 @@
     </appender>
 
 
-<!--    <appender name="kafkaAppender" class="com.github.danielwegener.logback.kafka.KafkaAppender">-->
-<!--        <encoder class="com.github.danielwegener.logback.kafka.encoding.LayoutKafkaMessageEncoder">-->
-<!--            <layout class="ch.qos.logback.classic.PatternLayout">-->
-<!--                <Pattern>%msg%n</Pattern>-->
-<!--            </layout>-->
-<!--        </encoder>-->
-<!--        <topic>log-test-kafka</topic>-->
-<!--        <producerConfig>bootstrap.servers=bdp-dn1:9092</producerConfig>-->
-<!--    </appender>-->
+    <appender name="kafkaAppender" class="com.github.danielwegener.logback.kafka.KafkaAppender">
+        <encoder class="com.github.danielwegener.logback.kafka.encoding.LayoutKafkaMessageEncoder">
+            <layout class="ch.qos.logback.classic.PatternLayout">
+                <Pattern>%msg%n</Pattern>
+            </layout>
+        </encoder>
+        <topic>log-test-kafka</topic>
+        <producerConfig>bootstrap.servers=192.168.45.241:9092</producerConfig>
+    </appender>
 
-    <!-- logger -->
-<!--    <logger name="KafkaLogger">-->
-<!--        <appender-ref ref="kafkaAppender"/>-->
-<!--    </logger>-->
+
+    <!--     logger -->
+    <logger name="KafkaLogger">
+        <appender-ref ref="kafkaAppender"/>
+    </logger>
 
     <root level="info">
         <appender-ref ref="STDOUT"/>
     </root>
+
 
 </configuration>

@@ -29,7 +29,9 @@ public class OrderResponse {
                     .sellerId(orderDetail.getProduct().getSeller().getId())
                     .productId(orderDetail.getProduct().getId())
                     .productName(orderDetail.getProduct().getName())
-                    .categoryId(orderDetail.getProduct().getCategory().getId())
+                    .firstCategoryId(orderDetail.getProduct().getCategory().getParent().getParent().getId())
+                    .secondCategoryId(orderDetail.getProduct().getCategory().getParent().getId())
+                    .thirdCategoryId(orderDetail.getProduct().getCategory().getId())
                     .categoryName(orderDetail.getProduct().getCategory().getName())
                     .count(orderDetail.getCount())
                     .totalPrice(orderDetail.getProduct().getPrice() * orderDetail.getCount())
@@ -37,7 +39,6 @@ public class OrderResponse {
 
             this.orderDetailList.add(orderDetailResponse);
         }
-
 
     }
 }

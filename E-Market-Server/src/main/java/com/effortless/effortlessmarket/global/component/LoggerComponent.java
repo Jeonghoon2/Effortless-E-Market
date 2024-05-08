@@ -16,16 +16,12 @@ public class LoggerComponent {
     }
 
     public Object aroundRequestMapping(HttpServletRequest request, ProceedingJoinPoint joinPoint) throws Throwable {
-
         request.setAttribute(KEY_REQUEST_LOGGER_DO_WRITE_LOG, true);
         request.setAttribute(KEY_REQUEST_LOGGER_CLIENT_IP, getClientIP(request));
-
-        long startMilli = System.currentTimeMillis();
-        long endMilli = System.currentTimeMillis();
         Object result = joinPoint.proceed();
-        request.setAttribute(KEY_REQUEST_LOGGER_ELAPSED_MILLI, endMilli - startMilli);
 
+        /* 요청 처리 완료 시점 기록 */
+        request.setAttribute(KEY_REQUEST_LOGGER_ELAPSED_MILLI,System.currentTimeMillis());
         return result;
-
     }
 }

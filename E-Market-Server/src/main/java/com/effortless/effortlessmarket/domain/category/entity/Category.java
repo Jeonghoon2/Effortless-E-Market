@@ -46,6 +46,11 @@ public class Category extends BaseTimeEntity {
     public Category(String name, Category parent) {
         this.name = name;
         this.parent = parent;
-        this.depth = (parent==null) ? 0 : parent.getDepth() + 1;
+        if (parent == null){
+            this.depth = 0;
+        }else {
+            this.depth = parent.getDepth() + 1;
+        }
+
     }
 }

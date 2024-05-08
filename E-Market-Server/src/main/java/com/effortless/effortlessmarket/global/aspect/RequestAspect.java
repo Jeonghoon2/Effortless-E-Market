@@ -17,15 +17,12 @@ import org.springframework.web.context.request.ServletRequestAttributes;
 @Component
 public class RequestAspect {
 
-    private LoggerComponent logger;
+    private final LoggerComponent loggerComponent;
 
-    public RequestAspect(LoggerComponent logger) {
-        this.logger = logger;
+    public RequestAspect(LoggerComponent loggerComponent) {
+        this.loggerComponent = loggerComponent;
     }
 
-    /**
-     * Allow Annotation List
-     */
     @Pointcut(
             "@annotation(org.springframework.web.bind.annotation.RequestMapping)" +
                     "|| @annotation(org.springframework.web.bind.annotation.GetMapping)" +
@@ -37,9 +34,6 @@ public class RequestAspect {
     public void allowAnnotations() {
     }
 
-    /**
-     * Allow Package List
-     */
     @Pointcut("within(com.effortless.effortlessmarket..*)")
     public void allowPackages() {
     }
@@ -51,8 +45,7 @@ public class RequestAspect {
     @Around("allowAnnotations() && allowPackages() && excludeLogging()")
     public Object aroundRequestMapping(ProceedingJoinPoint joinPoint) throws Throwable {
         HttpServletRequest request = ((ServletRequestAttributes) RequestContextHolder.currentRequestAttributes()).getRequest();
-        return logger.aroundRequestMapping(request, joinPoint);
+        return loggerComponent.aroundRequestMapping(request, joinPoint);
     }
-
 
 }

@@ -4,6 +4,8 @@ import com.effortless.effortlessmarket.domain.order.dto.OrderRequest;
 import com.effortless.effortlessmarket.domain.order.dto.OrderResponse;
 import com.effortless.effortlessmarket.domain.order.entity.Order;
 import com.effortless.effortlessmarket.domain.order.service.OrderService;
+import com.effortless.effortlessmarket.global.annotaion.EnableLogging;
+import com.effortless.effortlessmarket.global.annotaion.ExcludeLogging;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -17,6 +19,7 @@ import java.util.List;
 public class OrderController {
 
     private final OrderService orderService;
+
 
     @PostMapping
     public ResponseEntity<OrderResponse> createOrder(@RequestBody OrderRequest.Order orderRequest){

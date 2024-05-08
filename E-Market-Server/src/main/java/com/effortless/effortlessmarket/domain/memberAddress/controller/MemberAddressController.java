@@ -12,13 +12,13 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 @RestController
-@RequestMapping("/api/v1/member")
+@RequestMapping("/api/v1/member/address")
 @RequiredArgsConstructor
 public class MemberAddressController {
 
     private final MemberAddressService memberAddressService;
 
-    @PostMapping("/address")
+    @PostMapping
     public ResponseEntity<MemberAddress> addMemberAddress(
             @RequestBody MemberAddressRequest memberAddressRequest
             ){
@@ -26,13 +26,13 @@ public class MemberAddressController {
         return ResponseEntity.status(HttpStatus.CREATED).body(saveMemberAddress);
     }
 
-    @GetMapping("/address/{memberId}")
+    @GetMapping("/{memberId}")
     public ResponseEntity<List<MemberAddress>> getAllMemberAddress(@PathVariable("memberId") Long memberId){
         List<MemberAddress> allAddress = memberAddressService.getAllAddress(memberId);
         return ResponseEntity.status(HttpStatus.OK).body(allAddress);
     }
 
-    @PutMapping("/address")
+    @PutMapping
     public ResponseEntity<MemberAddress> updateMemberAddress(
             @RequestBody MemberAddressRequest memberAddressRequest
     ){
@@ -40,7 +40,7 @@ public class MemberAddressController {
         return ResponseEntity.status(HttpStatus.OK).body(updateMemberAddress);
     }
 
-    @DeleteMapping("/address/{addressId}")
+    @DeleteMapping("/{addressId}")
     public ResponseEntity<Object> deleteMemberAddress(@PathVariable Long addressId){
         String msg = memberAddressService.deleteMemberAddress(addressId);
         return ResponseEntity.status(HttpStatus.OK).body(msg);

@@ -5,6 +5,8 @@ import com.effortless.effortlessmarket.domain.orderDetail.entity.OrderDetail;
 import com.effortless.effortlessmarket.domain.product.dto.ProductRequest;
 import com.effortless.effortlessmarket.domain.seller.entity.Seller;
 import com.effortless.effortlessmarket.global.entity.BaseTimeEntity;
+import com.fasterxml.jackson.annotation.JsonBackReference;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.Getter;
@@ -27,7 +29,7 @@ public class Product extends BaseTimeEntity {
     @Column(name = "product_id")
     private Long id;
 
-    @Column(name = "product_name", length = 50)
+    @Column(name = "product_name", length = 200)
     private String name;
 
     @Column(name = "product_price")
@@ -39,6 +41,9 @@ public class Product extends BaseTimeEntity {
     @Column(name = "product_quantity")
     private Integer quantity;
 
+    @Column(name = "product_thumbnail")
+    private String thumbnail;
+
     @Column(name = "product_views")
     private Integer views = 0;
 
@@ -47,6 +52,7 @@ public class Product extends BaseTimeEntity {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "seller_id")
+    @JsonBackReference
     private Seller seller;
 
     @ManyToOne(fetch = FetchType.LAZY)
@@ -59,11 +65,12 @@ public class Product extends BaseTimeEntity {
     public Product() {
     }
 
-    public Product(ProductRequest request, Category category, Seller seller) {
+    public Product(ProductRequest request, Category category, Seller seller, String thumbnail) {
         this.name = request.getName();
         this.price = request.getPrice();
         this.description = request.getDescription();
         this.quantity = request.getQuantity();
+        this.thumbnail = thumbnail;
         this.seller = seller;
         this.category = category;
     }

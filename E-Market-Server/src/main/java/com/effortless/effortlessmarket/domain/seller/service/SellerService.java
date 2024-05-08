@@ -1,12 +1,16 @@
 package com.effortless.effortlessmarket.domain.seller.service;
 
 import com.effortless.effortlessmarket.domain.seller.dto.SellerRequest;
+import com.effortless.effortlessmarket.domain.seller.dto.SellerResponse;
 import com.effortless.effortlessmarket.domain.seller.entity.Seller;
 import com.effortless.effortlessmarket.domain.seller.repository.SellerRepository;
 import com.effortless.effortlessmarket.global.exception.CustomException;
 import com.effortless.effortlessmarket.global.exception.CustomExceptionType;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+
+import java.util.ArrayList;
+import java.util.List;
 
 @Service
 @RequiredArgsConstructor
@@ -48,4 +52,15 @@ public class SellerService {
     }
 
 
+    public List<SellerResponse> getAllerSeller() {
+        List<Seller> allSeller = sellerRepository.findAll();
+
+        List<SellerResponse> responseList = new ArrayList<>();
+
+        for (Seller seller : allSeller) {
+            SellerResponse newSeller = new SellerResponse(seller);
+            responseList.add(newSeller);
+        }
+        return responseList;
+    }
 }

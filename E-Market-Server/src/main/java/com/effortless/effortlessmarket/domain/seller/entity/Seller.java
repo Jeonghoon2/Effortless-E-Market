@@ -4,11 +4,13 @@ package com.effortless.effortlessmarket.domain.seller.entity;
 import com.effortless.effortlessmarket.domain.product.entity.Product;
 import com.effortless.effortlessmarket.domain.seller.dto.SellerRequest;
 import com.effortless.effortlessmarket.global.entity.BaseTimeEntity;
+import com.fasterxml.jackson.annotation.JsonManagedReference;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import org.hibernate.annotations.Fetch;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -38,7 +40,8 @@ public class Seller extends BaseTimeEntity {
     @Column(name = "seller_brand_name", length = 50)
     private String brandName;
 
-    @OneToMany(mappedBy = "seller")
+    @OneToMany(mappedBy = "seller", fetch = FetchType.LAZY)
+    @JsonManagedReference
     private List<Product> productList = new ArrayList<>();
 
     public Seller() {
