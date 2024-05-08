@@ -1,0 +1,148 @@
+.product-list-section {
+  display: flex;
+  width: 100%;
+  height: fit-content;
+
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+}
+
+.product-list-nav-list {
+  width: 60%;
+  height: fit-content;
+  background-color: white;
+  border: 2px solid lightgray;
+  display: flex;
+  flex-direction: row;
+  justify-content: space-around;
+}
+
+.product-list-nav-items {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  grid-template-rows: 2;
+  width: 100%;
+  align-items: center;
+  justify-content: space-evenly;
+}
+
+.product-list-nav-item {
+  display: block;
+  cursor: pointer;
+  color: gray;
+  text-align: center;
+  padding: 10px;
+}
+
+.product-list-nav-item:hover {
+  color: #222f23;
+  font-weight: bold;
+}
+
+.product-list-nav-item-desc {
+  font-weight: bold;
+  padding: 0 10px;
+}
+
+.l2 {
+  margin-bottom: 50px;
+  border-top: none;
+}
+
+.hr {
+  width: 60%;
+  height: 1px;
+  background-color: #222f23;
+}
+
+.product-card-list {
+  display: flex;
+  flex-direction: column;
+  width: 60%;
+  height: fit-content;
+
+  align-items: center;
+}
+
+.total-count {
+  width: 60%;
+  display: flex;
+  justify-content: right;
+  padding-right: 20px;
+  margin-bottom: 10px;
+}
+
+.product-card {
+  text-decoration: none;
+  color: black;
+  background-color: white;
+  width: 100%;
+  height: 150px;
+  padding: 0 30px 0 0;
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid lightgray;
+}
+
+.product-img {
+  min-width: 150px;
+  min-height: 150px;
+  background-color: #222f23;
+}
+
+.product-img-p {
+  width: 150px;
+  height: 150px;
+  object-fit: cover;
+}
+
+.product-list-card-desc {
+  min-width: 70%;
+  max-width: 70%;
+  overflow: hidden;
+  height: 80%;
+
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+.product-list-card-title {
+  font-size: 20px;
+  width: 684px;
+  width: 100%;
+  font-weight: bold;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.product-list-card-description {
+  width: 50%;
+
+  margin-top: 10px;
+  font-size: 15px;
+}
+
+.product-list-card-price {
+  font-size: 15px;
+  bottom: 0;
+}
+
+.info {
+  margin: 50px 0;
+}
+.pagination-section {
+  width: 60%;
+  display: flex;
+  flex-direction: row;
+  justify-content: center;
+  margin: 20px 0;
+  gap: 20px;
+}
+.product-list-nav-item.active {
+  color: #222f23; /* 빨간색으로 표시 */
+  font-weight: bold; /* 글씨 굵게 */
+}

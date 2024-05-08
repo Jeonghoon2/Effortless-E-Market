@@ -1,0 +1,12 @@
+.content-section{
+    width: 100%;
+    display: flex;
+    justify-content: center;
+    white-space: nowrap;
+}
+
+.content-container{
+    width: 1563px;
+    display: flex;
+    flex-direction: row;
+}

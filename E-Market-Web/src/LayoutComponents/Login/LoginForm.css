@@ -1,0 +1,173 @@
+.login-form-section{
+  margin: 0 auto;
+  display: block;
+  width: 40em;
+  height: 60em; 
+  background-color: white;
+  border-radius: 5px;
+}
+
+.login-form-section a{
+  text-decoration: none;
+}
+.login-title{
+  color: #222F23;
+  display: block;
+  width: 100%;
+  height: 2em;
+  line-height: 2em;
+  text-align: center;
+  font-weight: bold;
+  padding-top: 1em ;
+  margin-bottom: 2em;
+}
+
+.input-section{
+  width: 30em;
+  height: 4em;
+  display: block;
+  margin: auto;
+  border-bottom: 1px solid #979797;
+}
+
+.input-section input{
+  color: black;
+  width: 30em;
+  height: 4em;
+  border: none;
+  background-color: transparent;
+  font-size: 16px;
+  outline: none;
+}
+
+.password-eye {
+  margin: auto;
+  height: 4em;
+  align-items: center;
+}
+
+.check-section{
+
+  width: 30em;
+  height: 3em;
+  display: block;
+  margin: auto;
+  align-items: center;
+  padding-top: .5em;
+}
+
+.check-control{
+  width: 2.4em;
+  height: 3em;
+  display: block;
+  float: left;
+  
+}
+.check-section span{
+  float: left;
+  padding-left: 10px;
+  color: #979797;
+}
+
+.check-section a{
+  float: right;
+  text-decoration: none;
+  color: #979797;
+}
+
+.login-button-section{
+  margin: 3em auto;
+  width: 30em;
+  height: 4em;
+  background-color: #222F23;
+
+  text-align: center;
+  line-height: 4em;
+}
+
+.login-button-section span{
+  color: white;
+  font-weight: bold;
+  
+}
+
+.register-button-section{
+  margin: auto;
+  width: 30em;
+  height: 4em;
+  background-color: transparent;
+  border: 1px solid #9b9b9b;
+  text-align: center;
+  line-height: 4em;
+}
+
+.register-button-section span{
+  color: #979797;
+  font-weight: bold;
+  
+}
+
+/* Check Box */
+.check {
+  position: relative;
+  background: linear-gradient(90deg, #245c38, #222F23);
+  line-height: 0;
+  font-size: 25px;
+
+ }
+ 
+ .check input[type="checkbox"],
+ .check label,
+ .check label::before,
+ .check label::after {
+  appearance: none;
+  display: inline-block;
+  font-size: inherit;
+  border-radius: 1em;
+  border: 0;
+  transition: .35s ease-in-out;
+  box-sizing: border-box;
+  cursor: pointer;
+ }
+ 
+ .check {
+  appearance: none;
+  display: inline-block;
+  border-radius: 1em;
+  border: none;
+  transition: .35s ease-in-out;
+  box-sizing: border-box;
+  cursor: pointer;
+ }
+ 
+ .check label {
+  width: 1.5em;
+  height: .9em;
+  background: #d7d7d7;
+  overflow: hidden;
+ }
+ 
+ .check input[type="checkbox"] {
+  position: absolute;
+  z-index: 1;
+  width: .7em;
+  height: .7em;
+  top: .1em;
+  left: .1em;
+  background: linear-gradient(45deg, #dedede, #ffffff);
+  box-shadow: 0 6px 7px rgba(0,0,0,0.3);
+  outline: none;
+ }
+ 
+ .check input[type="checkbox"]:checked {
+  left: .7em;
+ }
+ 
+ .check input[type="checkbox"]:checked + label {
+  background: transparent;
+ }
+ 
+ 
+ 
+ 
+ 

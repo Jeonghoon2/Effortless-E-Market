@@ -1,0 +1,149 @@
+.product-section {
+  width: 100%;
+  height: calc(100vh - 255px);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.product-container {
+  width: 1060px;
+  height: 720px;
+  background-color: white;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-bottom: 50px;
+}
+
+.product-container-sub {
+  width: 100%;
+  height: 600px;
+  padding: 20px;
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+}
+
+.product-img-section {
+  background-color: aqua;
+  width: 500px;
+  height: 500px;
+}
+
+.product-img-section > img {
+  width: 500px;
+  height: 500px;
+  object-fit: contain;
+}
+
+.product-desc-section {
+  width: 500px;
+  height: 500px;
+  position: relative;
+}
+
+.product-title {
+  width: 100%;
+  color: #222f23;
+  font-size: 32px;
+  font-weight: bold;
+  white-space: nowrap;
+}
+
+.product-description {
+  width: 100%;
+  font-size: 20px;
+  min-height: 90px;
+  max-height: 90px;
+  text-overflow: ellipsis;
+  overflow: hidden;
+  margin-bottom: 20px;
+}
+
+.propduct-seller-name {
+  font-size: 18px;
+  margin-bottom: 5px;
+}
+.propduct-brand-name {
+  font-size: 18px;
+  margin-bottom: 5px;
+}
+
+.propduct-category {
+  font-size: 18px;
+  margin-bottom: 5px;
+}
+
+.propduct-price {
+  font-size: 18px;
+  margin-bottom: 5px;
+}
+
+.product-buy-btn-section {
+  width: 100%;
+  height: fit-content;
+  display: flex;
+  flex-direction: row;
+  position: absolute;
+  bottom: 0;
+}
+.product-buy-cnt-section {
+  width: 20%;
+  display: flex;
+  flex-direction: column;
+}
+
+.product-buy-cnt-section > input {
+  border: 2px solid #222f23;
+  border-right: none;
+  height: 80px;
+  text-align: center;
+  font-size: 20px;
+}
+
+.product-buy-cnt-section > input:focus {
+  outline: none;
+}
+.product-buy-cnt-section > div {
+  width: 100%;
+  display: flex;
+  flex-direction: row;
+}
+
+.product-buy-btn {
+  width: 80%;
+  height: 80px;
+  line-height: 80px;
+  background-color: #222f23;
+  color: white;
+  font-size: 42px;
+  text-align: center;
+}
+
+.thumbnail-slide {
+  width: 90%;
+  height: 110px;
+  border-top: 2px solid lightgray;
+  border-bottom: 2px solid lightgray;
+  display: flex;
+  flex-direction: row;
+  justify-content: space-around;
+  align-items: center;
+}
+
+.thubnail-slide-box {
+  border: 2px solid gray;
+  width: 90px;
+  height: 90px;
+}
+
+.back-button {
+  padding: 10px 20px;
+  background-color: #222f23;
+  width: 200px;
+  height: 50px;
+  color: white;
+  text-align: center;
+  cursor: pointer;
+}

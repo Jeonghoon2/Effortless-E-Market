@@ -1,0 +1,15 @@
+a {
+  text-align: none;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+}
+
+.main-container {
+  width: 100%;
+  min-height: calc(100vh - 255px);
+  padding-bottom: 255px;
+}
